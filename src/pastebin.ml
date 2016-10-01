@@ -52,7 +52,8 @@ let callback conn (req : Cohttp.Request.t) (body : Cohttp_lwt_body.t)
                   |> Int64.to_int in
         begin match Pastes.get idx with
           | Some s ->
-            (Cohttp.Response.make (), Cohttp_lwt_body.of_string s)
+            (Cohttp.Response.make ~headers:(Cohttp.Header.init_with "Content-Type" "text/plain") (),
+             Cohttp_lwt_body.of_string s)
           | None ->
             (Cohttp.Response.make ~status:`Not_found (),
              Cohttp_lwt_body.of_string "Not found\n")
