@@ -23,9 +23,7 @@ let re_b64_digit =
 
 let re_b64_num =
   let num_digits = ceil (float_of_int ECB.block_size /. (3. /. 4.)) |> int_of_float in
-  let () = Printf.printf "num_digits : %d\n" num_digits in
   let padding = 3 - (ECB.block_size mod 3) in
-  let () = Printf.printf "Padding: %n\n" padding in
   Re.seq [Re.repn re_b64_digit num_digits (Some num_digits);
           Re.repn (Re.char '=') padding (Some padding)]
 
@@ -37,30 +35,6 @@ let tyre_b64_num = Tyre.conv ~name:"hexadecimal"
 
 let n = Nocrypto.Rng.Int64.gen 64L |> cs_of_int64
 
-let () =
-  n
-  |> int64_of_cs
-  |> Int64.to_string
-  |> print_endline
-
-let () = print_endline (Nocrypto.Base64.encode n |> Cstruct.to_string)
-    
-let () = Printf.printf "n: %s\n" (Tyre.eval tyre_b64_num n)
-
-let () = match Tyre.exec (Tyre.compile tyre_b64_num) (Tyre.eval tyre_b64_num n) with
-  | Ok x ->
-    Printf.printf "Tyre.exec: %s\n" (int64_of_cs x |> Int64.to_string)
-  | Error e ->
-    print_endline "Error"
-
-let () =
-  n
-  |> ECB.encrypt ~key
-  |> ECB.decrypt ~key
-  |> int64_of_cs
-  |> Int64.to_string
-  |> print_endline
-
 let tyre_resource = Tyre.("/" *> tyre_b64_num)
 let tyre_resource_re = Tyre.compile tyre_resource
 
@@ -69,7 +43,6 @@ let callback conn (req : Cohttp.Request.t) (body : Cohttp_lwt_body.t)
   match req.Cohttp.Request.meth with
   | `GET ->
     let resource = req.Cohttp.Request.resource in
-    let () = print_endline resource in
     let x = Tyre.exec tyre_resource_re resource in
     let resp, resp_body = match x with
       | Ok n -> 
@@ -89,7 +62,6 @@ let callback conn (req : Cohttp.Request.t) (body : Cohttp_lwt_body.t)
         Cohttp_lwt_body.of_string "Bad Request\n"
     in Lwt.return (resp, resp_body)
   | `POST ->
-    Lwt_io.printl "Received POST" >>= fun () ->
     let%lwt body = Cohttp_lwt_body.to_string body in
     let idx = Pastes.put body in
     let ref = Int64.of_int idx
@@ -99,7 +71,6 @@ let callback conn (req : Cohttp.Request.t) (body : Cohttp_lwt_body.t)
               |> Cstruct.to_string in
     let req_url = Cohttp.Request.uri req in
     let url =  Uri.with_scheme (Uri.with_path req_url ref) (Some "http") in
-    let%lwt () = Lwt_io.printl body in
     Lwt.return (Cohttp.Response.make ~status:`Created (),
                 Cohttp_lwt_body.of_string (Uri.to_string url ^ "\n"))
   | _ ->
