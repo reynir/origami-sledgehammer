@@ -63,13 +63,12 @@ let callback conn (req : Cohttp.Request.t) (body : Cohttp_lwt_body.t)
   | `POST ->
     let%lwt body = Cohttp_lwt_body.to_string body in
     let idx = Pastes.put body in
-    let ref = Int64.of_int idx
+    let path = Int64.of_int idx
               |> cs_of_int64
               |> ECB.encrypt ~key
-              |> Nocrypto.Base64.encode
-              |> Cstruct.to_string in
+              |> Tyre.eval tyre_resource in
     let req_url = Cohttp.Request.uri req in
-    let url =  Uri.with_scheme (Uri.with_path req_url ref) (Some "http") in
+    let url =  Uri.with_scheme (Uri.with_path req_url path) (Some "http") in
     Lwt.return (Cohttp.Response.make ~status:`Created (),
                 Cohttp_lwt_body.of_string (Uri.to_string url ^ "\n"))
   | _ ->
