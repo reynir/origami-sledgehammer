@@ -16,6 +16,7 @@ end = struct
     idx
 
   let get idx : string option =
-    assert (idx >= 0 && idx < max);
-    store.(idx)
+    if idx >= 0 && idx < max
+    then store.(idx)
+    else None
 end
