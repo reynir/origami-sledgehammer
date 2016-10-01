@@ -1,0 +1,15 @@
+OASISFormat: 0.4
+Name:        pastebin
+Version:     0.1
+Synopsis:    Pastebin in OCaml
+Authors:     Reynir
+License:     PROP
+Plugins:     DevFiles (0.4)
+
+Executable pastebin
+  Path:       src
+  CompiledObject: best
+  BuildTools: ocamlbuild
+  MainIs:     pastebin.ml
+  BuildDepends:
+    lwt, lwt.ppx, nocrypto.lwt, tyre, cohttp.lwt, batteries
