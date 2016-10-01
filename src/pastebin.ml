@@ -33,8 +33,6 @@ let tyre_b64_num = Tyre.conv ~name:"hexadecimal"
     (fun x -> Nocrypto.Base64.encode x |> Cstruct.to_string)
     (Tyre.regex re_b64_num)
 
-let n = Nocrypto.Rng.Int64.gen 64L |> cs_of_int64
-
 let tyre_resource = Tyre.("/" *> tyre_b64_num)
 let tyre_resource_re = Tyre.compile tyre_resource
 
