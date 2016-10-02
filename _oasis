@@ -12,4 +12,4 @@ Executable pastebin
   BuildTools: ocamlbuild
   MainIs:     pastebin.ml
   BuildDepends:
-    lwt, lwt.ppx, nocrypto.lwt, tyre, cohttp.lwt, batteries
+    lwt, lwt.ppx, nocrypto.lwt, tyre, cohttp.lwt, batteries, base64

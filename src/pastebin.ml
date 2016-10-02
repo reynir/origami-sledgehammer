@@ -10,27 +10,29 @@ let () = ignore @@ Nocrypto_entropy_lwt.initialize ()
 let secret = Nocrypto.Rng.generate ECB.key_sizes.(0)
 let key = ECB.of_secret secret
 
-let cs_of_int64 n =
+let cs_of_int n =
   let buf = Cstruct.create 8 in
-  let () = Cstruct.BE.set_uint64 buf 0 n in
+  let () = Cstruct.BE.set_uint64 buf 0 (Int64.of_int n) in
   buf
   
-let int64_of_cs buf =
-  Cstruct.BE.get_uint64 buf 0
+let int_of_cs buf =
+  Cstruct.BE.get_uint64 buf 0 |> Int64.to_int
 
 let re_b64_digit =
   Re.(alt [digit; rg 'a' 'z'; rg 'A'  'Z'; char '/'; char '+'])
 
 let re_b64_num =
-  let num_digits = ceil (float_of_int ECB.block_size /. (3. /. 4.)) |> int_of_float in
-  let padding = 3 - (ECB.block_size mod 3) in
+  let num_digits = ceil (float_of_int ECB.block_size *. 4. /. 3.) |> int_of_float in
+  let padding_size = 3 - (ECB.block_size mod 3) in
+  let padding = Re.repn (Re.char '=') padding_size (Some padding_size) in
   Re.seq [Re.repn re_b64_digit num_digits (Some num_digits);
-          Re.repn (Re.char '=') padding (Some padding)]
+          Re.opt padding]
 
 
 let tyre_b64_num = Tyre.conv ~name:"hexadecimal"
-    (fun x -> Cstruct.of_string x |> Nocrypto.Base64.decode)
-    (fun x -> Nocrypto.Base64.encode x |> Cstruct.to_string)
+    (fun x -> try Some (B64.decode x |> Cstruct.of_string |> int_of_cs)
+       with Not_found -> None)
+    (fun x -> cs_of_int x |> Cstruct.to_string |> B64.encode ~pad:false)
     (Tyre.regex re_b64_num)
 
 let tyre_resource = Tyre.("/" *> tyre_b64_num)
@@ -44,10 +46,9 @@ let callback conn (req : Cohttp.Request.t) (body : Cohttp_lwt_body.t)
     let x = Tyre.exec tyre_resource_re resource in
     begin match x with
       | Ok n -> 
-        let idx = n
+        let idx = cs_of_int n
                   |> ECB.decrypt ~key
-                  |> int64_of_cs
-                  |> Int64.to_int in
+                  |> int_of_cs in
         begin match Pastes.get idx with
           | Some s ->
             Lwt.return (Cohttp.Response.make ~headers:(Cohttp.Header.init_with "Content-Type" "text/plain") (),
@@ -63,9 +64,9 @@ let callback conn (req : Cohttp.Request.t) (body : Cohttp_lwt_body.t)
   | `POST ->
     let%lwt body = Cohttp_lwt_body.to_string body in
     let idx = Pastes.put body in
-    let path = Int64.of_int idx
-              |> cs_of_int64
+    let path = cs_of_int idx
               |> ECB.encrypt ~key
+              |> int_of_cs
               |> Tyre.eval tyre_resource in
     let req_url = Cohttp.Request.uri req in
     let url =  Uri.with_scheme (Uri.with_path req_url path) (Some "http") in
