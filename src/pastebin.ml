@@ -42,7 +42,7 @@ let callback conn (req : Cohttp.Request.t) (body : Cohttp_lwt_body.t)
   | `GET ->
     let resource = req.Cohttp.Request.resource in
     let x = Tyre.exec tyre_resource_re resource in
-    let resp, resp_body = match x with
+    begin match x with
       | Ok n -> 
         let idx = n
                   |> ECB.decrypt ~key
@@ -50,16 +50,16 @@ let callback conn (req : Cohttp.Request.t) (body : Cohttp_lwt_body.t)
                   |> Int64.to_int in
         begin match Pastes.get idx with
           | Some s ->
-            (Cohttp.Response.make ~headers:(Cohttp.Header.init_with "Content-Type" "text/plain") (),
+            Lwt.return (Cohttp.Response.make ~headers:(Cohttp.Header.init_with "Content-Type" "text/plain") (),
              Cohttp_lwt_body.of_string s)
           | None ->
-            (Cohttp.Response.make ~status:`Not_found (),
-             Cohttp_lwt_body.of_string "Not found\n")
+            Lwt.return (Cohttp.Response.make ~status:`Not_found (),
+                        Cohttp_lwt_body.of_string "Not found\n")
         end
       | Error e ->
-        Cohttp.Response.make ~status:`Bad_request (),
-        Cohttp_lwt_body.of_string "Bad Request\n"
-    in Lwt.return (resp, resp_body)
+        Lwt.return (Cohttp.Response.make ~status:`Bad_request (),
+                    Cohttp_lwt_body.of_string "Bad Request\n")
+    end
   | `POST ->
     let%lwt body = Cohttp_lwt_body.to_string body in
     let idx = Pastes.put body in
