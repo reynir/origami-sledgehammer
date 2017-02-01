@@ -29,13 +29,13 @@ let re_b64_num =
           Re.opt padding]
 
 
-let tyre_b64_num = Tyre.conv ~name:"hexadecimal"
+let tyre_b64_num = Tyre.conv_fail ~name:"hexadecimal"
     (fun x -> try Some (B64.decode x |> Cstruct.of_string |> int_of_cs)
        with Not_found -> None)
     (fun x -> cs_of_int x |> Cstruct.to_string |> B64.encode ~pad:false)
     (Tyre.regex re_b64_num)
 
-let tyre_resource = Tyre.("/" *> tyre_b64_num)
+let tyre_resource = Tyre.(str "/p/" *> tyre_b64_num)
 let tyre_resource_re = Tyre.compile tyre_resource
 
 let callback conn (req : Cohttp.Request.t) (body : Cohttp_lwt_body.t)
