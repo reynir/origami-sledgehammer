@@ -1,6 +1,6 @@
 module Make(Max : sig val max : int end) : sig
-  val put : string -> int
-  val get : int -> string option
+  val put : string -> int64
+  val get : int64 -> string option
 end = struct
   open Max
 
@@ -10,12 +10,13 @@ end = struct
 
   let store : string option array = Array.make max None
 
-  let put s : int =
+  let put s : int64 =
     let idx = alloc () mod max in
     store.(idx) <- Some s;
-    idx
+    Int64.of_int idx
 
   let get idx : string option =
+    let idx = Int64.to_int idx in
     if idx >= 0 && idx < max
     then store.(idx)
     else None

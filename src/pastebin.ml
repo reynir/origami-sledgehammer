@@ -10,13 +10,13 @@ let () = ignore @@ Nocrypto_entropy_lwt.initialize ()
 let secret = Nocrypto.Rng.generate ECB.key_sizes.(0)
 let key = ECB.of_secret secret
 
-let cs_of_int n =
+let cs_of_int64 n =
   let buf = Cstruct.create 8 in
-  let () = Cstruct.BE.set_uint64 buf 0 (Int64.of_int n) in
+  let () = Cstruct.BE.set_uint64 buf 0 n in
   buf
   
-let int_of_cs buf =
-  Cstruct.BE.get_uint64 buf 0 |> Int64.to_int
+let int64_of_cs buf =
+  Cstruct.BE.get_uint64 buf 0
 
 let re_b64_digit =
   Re.(alt [digit; rg 'a' 'z'; rg 'A'  'Z'; char '/'; char '+'])
@@ -30,9 +30,9 @@ let re_b64_num =
 
 
 let tyre_b64_num = Tyre.conv_fail ~name:"hexadecimal"
-    (fun x -> try Some (B64.decode x |> Cstruct.of_string |> int_of_cs)
+    (fun x -> try Some (B64.decode x |> Cstruct.of_string |> int64_of_cs)
        with Not_found -> None)
-    (fun x -> cs_of_int x |> Cstruct.to_string |> B64.encode ~pad:false)
+    (fun x -> cs_of_int64 x |> Cstruct.to_string |> B64.encode ~pad:false)
     (Tyre.regex re_b64_num)
 
 let tyre_resource = Tyre.(str "/p/" *> tyre_b64_num)
@@ -46,9 +46,9 @@ let callback conn (req : Cohttp.Request.t) (body : Cohttp_lwt_body.t)
     let x = Tyre.exec tyre_resource_re resource in
     begin match x with
       | Ok n -> 
-        let idx = cs_of_int n
+        let idx = cs_of_int64 n
                   |> ECB.decrypt ~key
-                  |> int_of_cs in
+                  |> int64_of_cs in
         begin match Pastes.get idx with
           | Some s ->
             Lwt.return (Cohttp.Response.make ~headers:(Cohttp.Header.init_with "Content-Type" "text/plain") (),
@@ -64,9 +64,9 @@ let callback conn (req : Cohttp.Request.t) (body : Cohttp_lwt_body.t)
   | `POST ->
     let%lwt body = Cohttp_lwt_body.to_string body in
     let idx = Pastes.put body in
-    let path = cs_of_int idx
+    let path = cs_of_int64 idx
               |> ECB.encrypt ~key
-              |> int_of_cs
+              |> int64_of_cs
               |> Tyre.eval tyre_resource in
     let req_url = Cohttp.Request.uri req in
     let url =  Uri.with_scheme (Uri.with_path req_url path) (Some "http") in
