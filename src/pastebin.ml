@@ -29,17 +29,16 @@ let re_b64_num =
           Re.opt padding]
 
 
-let tyre_b64_num = Tyre.conv_fail ~name:"hexadecimal"
-    (fun x -> try Some (B64.decode x |> Cstruct.of_string |> int64_of_cs)
-       with Not_found -> None)
+let tyre_b64_num = Tyre.conv
+    (fun x -> B64.decode x |> Cstruct.of_string |> int64_of_cs)
     (fun x -> cs_of_int64 x |> Cstruct.to_string |> B64.encode ~pad:false)
     (Tyre.regex re_b64_num)
 
 let tyre_resource = Tyre.(str "/p/" *> tyre_b64_num)
 let tyre_resource_re = Tyre.compile tyre_resource
 
-let callback conn (req : Cohttp.Request.t) (body : Cohttp_lwt_body.t)
-  : (Cohttp.Response.t * Cohttp_lwt_body.t) Lwt.t =
+let callback conn (req : Cohttp.Request.t) (body : Cohttp_lwt.Body.t)
+  : (Cohttp.Response.t * Cohttp_lwt.Body.t) Lwt.t =
   match req.Cohttp.Request.meth with
   | `GET ->
     let resource = req.Cohttp.Request.resource in
@@ -52,17 +51,17 @@ let callback conn (req : Cohttp.Request.t) (body : Cohttp_lwt_body.t)
         begin match Pastes.get idx with
           | Some s ->
             Lwt.return (Cohttp.Response.make ~headers:(Cohttp.Header.init_with "Content-Type" "text/plain") (),
-             Cohttp_lwt_body.of_string s)
+             Cohttp_lwt.Body.of_string s)
           | None ->
             Lwt.return (Cohttp.Response.make ~status:`Not_found (),
-                        Cohttp_lwt_body.of_string "Not found\n")
+                        Cohttp_lwt.Body.of_string "Not found\n")
         end
       | Error e ->
         Lwt.return (Cohttp.Response.make ~status:`Bad_request (),
-                    Cohttp_lwt_body.of_string "Bad Request\n")
+                    Cohttp_lwt.Body.of_string "Bad Request\n")
     end
   | `POST ->
-    let%lwt body = Cohttp_lwt_body.to_string body in
+    let%lwt body = Cohttp_lwt.Body.to_string body in
     let idx = Pastes.put body in
     let path = cs_of_int64 idx
               |> ECB.encrypt ~key
@@ -71,17 +70,17 @@ let callback conn (req : Cohttp.Request.t) (body : Cohttp_lwt_body.t)
     let req_url = Cohttp.Request.uri req in
     let url =  Uri.with_scheme (Uri.with_path req_url path) (Some "http") in
     Lwt.return (Cohttp.Response.make ~status:`Created (),
-                Cohttp_lwt_body.of_string (Uri.to_string url ^ "\n"))
+                Cohttp_lwt.Body.of_string (Uri.to_string url ^ "\n"))
   | _ ->
     Lwt.return (Cohttp.Response.make ~status:`Bad_request (),
-                Cohttp_lwt_body.of_string "Bad request\n")
+                Cohttp_lwt.Body.of_string "Bad request\n")
 
 let server =
   Cohttp_lwt_unix.Server.make ~callback ()
 
 let lwt_main () =
   let%lwt ctx = Conduit_lwt_unix.init ~src:"localhost" () in
-  let ctx = Cohttp_lwt_unix_net.init ~ctx () in
+  let ctx = Cohttp_lwt_unix.Net.init ~ctx () in
 Cohttp_lwt_unix.Server.create ~ctx ~mode:(`TCP (`Port 8081)) server
 
 let () = Lwt_main.run @@ lwt_main ()
