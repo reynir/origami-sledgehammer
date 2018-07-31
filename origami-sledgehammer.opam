@@ -1,0 +1,18 @@
+opam-version: "1.2"
+maintainer: "Reynir Björnsson <reynir@reynir.dk>"
+author: "Reynir Björnsson <reynir@reynir.dk>"
+dev-repo: "https://github.com/reynir/origami-sledgehammer.git"
+homepage: "https://github.com/reynir/origami-sledgehammer/"
+bug-reports: "https://github.com/reynir/origami-sledgehammer/issues/"
+license: "BSD-2-clause"
+build: ["jbuilder" "build" "-p" name]
+depends: [
+  "ocamlfind" {build}
+  "jbuilder" {build}
+  "cmdliner"
+  "lwt"
+  "nocrypto"
+  "tyre"
+  "cohttp-lwt-unix"
+  "base64"
+]
