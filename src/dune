@@ -1,5 +1,5 @@
 (executable
-  (name pastebin)
+  (name main)
   (public_name origami-sledgehammer)
   (preprocess (pps lwt.ppx))
-  (libraries lwt nocrypto.lwt tyre cohttp.lwt batteries base64))
+  (libraries cmdliner lwt nocrypto.lwt tyre cohttp.lwt batteries base64))

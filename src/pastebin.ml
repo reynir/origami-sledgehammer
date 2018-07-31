@@ -77,9 +77,7 @@ let callback _conn (req : Cohttp.Request.t) (body : Cohttp_lwt.Body.t)
 let server =
   Cohttp_lwt_unix.Server.make ~callback ()
 
-let lwt_main () =
-  let%lwt ctx = Conduit_lwt_unix.init ~src:"localhost" () in
+let lwt_main src port =
+  let%lwt ctx = Conduit_lwt_unix.init ?src () in
   let ctx = Cohttp_lwt_unix.Net.init ~ctx () in
-Cohttp_lwt_unix.Server.create ~ctx ~mode:(`TCP (`Port 8081)) server
-
-let () = Lwt_main.run @@ lwt_main ()
+Cohttp_lwt_unix.Server.create ~ctx ~mode:(`TCP (`Port port)) server
