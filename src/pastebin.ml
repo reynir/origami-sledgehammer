@@ -1,5 +1,4 @@
 open Result
-open Lwt.Infix
 
 module Pastes = Store.Make(struct let max = 128 end)
 
@@ -37,7 +36,7 @@ let tyre_b64_num = Tyre.conv
 let tyre_resource = Tyre.(str "/p/" *> tyre_b64_num)
 let tyre_resource_re = Tyre.compile tyre_resource
 
-let callback conn (req : Cohttp.Request.t) (body : Cohttp_lwt.Body.t)
+let callback _conn (req : Cohttp.Request.t) (body : Cohttp_lwt.Body.t)
   : (Cohttp.Response.t * Cohttp_lwt.Body.t) Lwt.t =
   match req.Cohttp.Request.meth with
   | `GET ->
@@ -56,7 +55,7 @@ let callback conn (req : Cohttp.Request.t) (body : Cohttp_lwt.Body.t)
             Lwt.return (Cohttp.Response.make ~status:`Not_found (),
                         Cohttp_lwt.Body.of_string "Not found\n")
         end
-      | Error e ->
+      | Error _ ->
         Lwt.return (Cohttp.Response.make ~status:`Bad_request (),
                     Cohttp_lwt.Body.of_string "Bad Request\n")
     end
