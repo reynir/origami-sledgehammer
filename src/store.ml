@@ -1,7 +1,10 @@
-module Make(Max : sig val max : int end) : sig
+module type S = sig
   val put : string -> int64
   val get : int64 -> string option
-end = struct
+end
+
+module Make(Max : sig val max : int end) : S =
+struct
   open Max
 
   let counter = ref (-1)
