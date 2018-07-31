@@ -6,8 +6,9 @@ module ECB = Nocrypto.Cipher_block.DES.ECB
 
 let () = ignore @@ Nocrypto_entropy_lwt.initialize ()
 
-let secret = Nocrypto.Rng.generate ECB.key_sizes.(0)
-let key = ECB.of_secret secret
+let key =
+  let secret = Nocrypto.Rng.generate ECB.key_sizes.(0) in
+  ECB.of_secret secret
 
 let cs_of_int64 n =
   let buf = Cstruct.create 8 in
