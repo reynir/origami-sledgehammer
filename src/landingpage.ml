@@ -1,7 +1,7 @@
 open Tyxml
 
 let html url =
-  (* Any way to detect the cheme? *)
+  (* Any way to detect the scheme? *)
   let url' = Uri.with_scheme url (Some "http") in
   let url = Uri.to_string url in
   let url' = Uri.to_string url' in
