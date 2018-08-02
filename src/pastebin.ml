@@ -14,7 +14,7 @@ let cs_of_int64 n =
   let buf = Cstruct.create 8 in
   let () = Cstruct.BE.set_uint64 buf 0 n in
   buf
-  
+
 let int64_of_cs buf =
   Cstruct.BE.get_uint64 buf 0
 
@@ -34,7 +34,21 @@ let tyre_b64_num = Tyre.conv
     (fun x -> cs_of_int64 x |> Cstruct.to_string |> B64.encode ~pad:false)
     (Tyre.regex re_b64_num)
 
-let tyre_resource = Tyre.(str "/p/" *> tyre_b64_num)
+type route =
+  | Root
+  | Paste of int64
+
+let tyre_root_resource =
+  Tyre.(start *> str "/" *> stop)
+
+let tyre_paste_resource =
+  Tyre.(start *> str "/p/" *> tyre_b64_num <* stop)
+
+let tyre_resource =
+  Tyre.alt tyre_root_resource tyre_paste_resource
+  |> Tyre.conv (function `Left () -> Root | `Right x -> Paste x)
+    (function Root -> `Left () | Paste x -> `Right x)
+
 let tyre_resource_re = Tyre.compile tyre_resource
 
 let callback _conn (req : Cohttp.Request.t) (body : Cohttp_lwt.Body.t)
@@ -44,7 +58,7 @@ let callback _conn (req : Cohttp.Request.t) (body : Cohttp_lwt.Body.t)
     let resource = req.Cohttp.Request.resource in
     let x = Tyre.exec tyre_resource_re resource in
     begin match x with
-      | Ok n -> 
+      | Ok (Paste n) ->
         let idx = cs_of_int64 n
                   |> ECB.decrypt ~key
                   |> int64_of_cs in
@@ -56,6 +70,10 @@ let callback _conn (req : Cohttp.Request.t) (body : Cohttp_lwt.Body.t)
             Lwt.return (Cohttp.Response.make ~status:`Not_found (),
                         Cohttp_lwt.Body.of_string "Not found\n")
         end
+      | Ok Root ->
+        let req_url = Cohttp.Request.uri req in
+        Lwt.return (Cohttp.Response.make (),
+                    Cohttp_lwt.Body.of_string (Landingpage.html_string req_url))
       | Error _ ->
         Lwt.return (Cohttp.Response.make ~status:`Bad_request (),
                     Cohttp_lwt.Body.of_string "Bad Request\n")
@@ -66,7 +84,7 @@ let callback _conn (req : Cohttp.Request.t) (body : Cohttp_lwt.Body.t)
     let path = cs_of_int64 idx
               |> ECB.encrypt ~key
               |> int64_of_cs
-              |> Tyre.eval tyre_resource in
+              |> Tyre.eval tyre_paste_resource in
     let req_url = Cohttp.Request.uri req in
     let url =  Uri.with_scheme (Uri.with_path req_url path) (Some "http") in
     Lwt.return (Cohttp.Response.make ~status:`Created (),
