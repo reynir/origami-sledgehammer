@@ -15,4 +15,5 @@ depends: [
   "tyre"
   "cohttp-lwt-unix"
   "base64"
+  "tyxml"
 ]
