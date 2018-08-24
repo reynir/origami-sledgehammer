@@ -2,6 +2,7 @@ open Result
 
 module Pastes = Store.Make(struct let max = 128 end)
 
+(* Nocrypto.Cipher_block.DES is 3DES and not actually DES *)
 module ECB = Nocrypto.Cipher_block.DES.ECB
 
 let () = ignore @@ Nocrypto_entropy_lwt.initialize ()
