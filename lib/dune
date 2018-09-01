@@ -1,0 +1,5 @@
+(library
+  (name pastebin)
+  (public_name origami-sledgehammer)
+  (preprocess (pps lwt.ppx))
+  (libraries lwt nocrypto tyre cohttp.lwt base64 tyxml))
