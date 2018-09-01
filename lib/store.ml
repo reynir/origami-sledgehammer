@@ -8,7 +8,7 @@ struct
   open Max
 
   let wrap_around =
-    let max_int_pred = Int64.(sub max_int one) in
+    let max_int_pred = Int64.sub max_int 1L in
     Int64.(sub max_int_pred (rem max_int_pred (of_int max)))
 
   let counter = ref (-1L)
