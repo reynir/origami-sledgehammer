@@ -8,7 +8,7 @@ struct
   open Max
 
   let wrap_around =
-    let max_int_pred = Int64.sub max_int 1L in
+    let max_int_pred = Int64.sub (Int64.of_int max_int) 1L in
     Int64.(sub max_int_pred (rem max_int_pred (of_int max)))
 
   let counter = ref (-1L)
@@ -24,8 +24,11 @@ struct
     idx
 
   let get idx : string option =
+    if Int64.to_int idx >= 0 &&
+       Int64.(sub !counter (of_int max) < idx) &&
+       idx <= !counter &&
+       Int64.of_int idx < wrap_around
     let idx = Int64.to_int idx in
-    if idx >= 0 && idx < wrap_around
     then store.(idx mod max)
     else None
 end
