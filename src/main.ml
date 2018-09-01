@@ -1,9 +1,15 @@
 open Cmdliner
 
-let server =
-  Cohttp_lwt_unix.Server.make ~callback:Pastebin.callback ()
+module ECB = Nocrypto.Cipher_block.DES.ECB
 
 let lwt_main src port =
+  let%lwt () = Nocrypto_entropy_lwt.initialize () in
+  let key =
+    let secret = Nocrypto.Rng.generate ECB.key_sizes.(0) in
+    ECB.of_secret secret in
+  let server =
+    let callback = Pastebin.callback key in
+    Cohttp_lwt_unix.Server.make ~callback () in
   let%lwt ctx = Conduit_lwt_unix.init ?src () in
   let ctx = Cohttp_lwt_unix.Net.init ~ctx () in
   Cohttp_lwt_unix.Server.create ~ctx ~mode:(`TCP (`Port port)) server
@@ -24,8 +30,6 @@ let info =
   let man = [`S "BUGS";
              `P "Submit bugs at https://github.com/reynir/origami-sledgehammer/issues"]
   in Term.info "origami-sledgehammer" ~doc ~man
-
-let () = Lwt_main.run @@ Nocrypto_entropy_lwt.initialize ()
 
 let () =
   match Term.eval (main, info) with

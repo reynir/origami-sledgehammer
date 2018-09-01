@@ -5,10 +5,6 @@ module Pastes = Store.Make(struct let max = 128 end)
 (* Nocrypto.Cipher_block.DES is 3DES and not actually DES *)
 module ECB = Nocrypto.Cipher_block.DES.ECB
 
-let key =
-  let secret = Nocrypto.Rng.generate ECB.key_sizes.(0) in
-  ECB.of_secret secret
-
 let cs_of_int64 n =
   let buf = Cstruct.create 8 in
   let () = Cstruct.BE.set_uint64 buf 0 n in
@@ -50,7 +46,7 @@ let tyre_resource =
 
 let tyre_resource_re = Tyre.compile tyre_resource
 
-let callback _conn (req : Cohttp.Request.t) (body : Cohttp_lwt.Body.t)
+let callback key _conn (req : Cohttp.Request.t) (body : Cohttp_lwt.Body.t)
   : (Cohttp.Response.t * Cohttp_lwt.Body.t) Lwt.t =
   match req.Cohttp.Request.meth with
   | `GET ->
