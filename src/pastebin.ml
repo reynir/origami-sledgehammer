@@ -93,11 +93,3 @@ let callback _conn (req : Cohttp.Request.t) (body : Cohttp_lwt.Body.t)
   | _ ->
     Lwt.return (Cohttp.Response.make ~status:`Bad_request (),
                 Cohttp_lwt.Body.of_string "Bad request\n")
-
-let server =
-  Cohttp_lwt_unix.Server.make ~callback ()
-
-let lwt_main src port =
-  let%lwt ctx = Conduit_lwt_unix.init ?src () in
-  let ctx = Cohttp_lwt_unix.Net.init ~ctx () in
-Cohttp_lwt_unix.Server.create ~ctx ~mode:(`TCP (`Port port)) server

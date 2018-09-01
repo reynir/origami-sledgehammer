@@ -1,5 +1,13 @@
 open Cmdliner
 
+let server =
+  Cohttp_lwt_unix.Server.make ~callback:Pastebin.callback ()
+
+let lwt_main src port =
+  let%lwt ctx = Conduit_lwt_unix.init ?src () in
+  let ctx = Cohttp_lwt_unix.Net.init ~ctx () in
+  Cohttp_lwt_unix.Server.create ~ctx ~mode:(`TCP (`Port port)) server
+
 let host =
   let doc = "Source interface to bind to" in
   Arg.(value & opt (some string) (Some "localhost") & info ["host"] ~doc)
@@ -9,7 +17,7 @@ let port =
   Arg.(value & opt int 8081 & info ["port"; "p"] ~doc)
 
 let main =
-  Term.(pure Pastebin.lwt_main $ host $ port)
+  Term.(pure lwt_main $ host $ port)
 
 let info =
   let doc = "Run pastebin server" in
