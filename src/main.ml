@@ -25,6 +25,8 @@ let info =
              `P "Submit bugs at https://github.com/reynir/origami-sledgehammer/issues"]
   in Term.info "origami-sledgehammer" ~doc ~man
 
+let () = Lwt_main.run @@ Nocrypto_entropy_lwt.initialize ()
+
 let () =
   match Term.eval (main, info) with
   | `Help | `Version -> exit 1
