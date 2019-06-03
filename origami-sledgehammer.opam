@@ -11,6 +11,7 @@ depends: [
   "jbuilder" {build}
   "cmdliner"
   "lwt"
+  "lwt_ppx"
   "nocrypto"
   "tyre"
   "cohttp-lwt-unix"
