@@ -6,16 +6,16 @@ let html url =
   let url = Uri.to_string url in
   let url' = Uri.to_string url' in
   let open Html in
-  let mytitle = title (pcdata "Origami Sledgehammer Pastebin Service")
+  let mytitle = title (Html.txt "Origami Sledgehammer Pastebin Service")
   and mybody = [
-    p [pcdata "To use this service, simply make a ";
-       code [pcdata "HTTP POST"];
-       pcdata " request with the desied contents of the paste.";
-       pcdata " E.g. using ";
-       code [pcdata "curl"];
-       pcdata ":"];
-    pre [pcdata "echo Hello, World | curl --data-binary @- ";
-         a ~a:[a_href url] [pcdata url']];
+    p [Html.txt "To use this service, simply make a ";
+       code [Html.txt "HTTP POST"];
+       Html.txt " request with the desied contents of the paste.";
+       Html.txt " E.g. using ";
+       code [Html.txt "curl"];
+       Html.txt ":"];
+    pre [Html.txt "echo Hello, World | curl --data-binary @- ";
+         a ~a:[a_href url] [Html.txt url']];
   ]
   in html
     (head mytitle [])

@@ -1,5 +1,4 @@
 (executable
   (name main)
   (public_name origami-sledgehammer)
-  (preprocess (pps lwt.ppx))
-  (libraries pastebin cmdliner lwt nocrypto.lwt tyre cohttp.lwt base64 tyxml))
+  (libraries pastebin cmdliner lwt mirage-crypto-rng.lwt tyre cohttp-lwt-unix base64 tyxml))

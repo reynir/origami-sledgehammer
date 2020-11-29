@@ -1,9 +1,10 @@
 open Result
+open Lwt.Infix
 
 module Pastes = Store.Make(struct let max = 128 end)
 
-(* Nocrypto.Cipher_block.DES is 3DES and not actually DES *)
-module ECB = Nocrypto.Cipher_block.DES.ECB
+(* Mirage_crypto.Cipher_block.DES is 3DES and not actually DES *)
+module ECB = Mirage_crypto.Cipher_block.DES.ECB
 
 let cs_of_int64 n =
   let buf = Cstruct.create 8 in
@@ -25,8 +26,8 @@ let re_b64_num =
 
 
 let tyre_b64_num = Tyre.conv
-    (fun x -> B64.decode x |> Cstruct.of_string |> int64_of_cs)
-    (fun x -> cs_of_int64 x |> Cstruct.to_string |> B64.encode ~pad:false)
+    (fun x -> Base64.decode_exn ~pad:false x |> Cstruct.of_string |> int64_of_cs)
+    (fun x -> cs_of_int64 x |> Cstruct.to_string |> Base64.encode_string ~pad:false)
     (Tyre.regex re_b64_num)
 
 type route =
@@ -74,7 +75,7 @@ let callback key _conn (req : Cohttp.Request.t) (body : Cohttp_lwt.Body.t)
                     Cohttp_lwt.Body.of_string "Bad Request\n")
     end
   | `POST ->
-    let%lwt body = Cohttp_lwt.Body.to_string body in
+    Cohttp_lwt.Body.to_string body >>= fun body ->
     let idx = Pastes.put body in
     let path = cs_of_int64 idx
               |> ECB.encrypt ~key

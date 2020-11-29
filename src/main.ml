@@ -1,16 +1,17 @@
 open Cmdliner
+open Lwt.Infix
 
-module ECB = Nocrypto.Cipher_block.DES.ECB
+module ECB = Mirage_crypto.Cipher_block.DES.ECB
 
 let lwt_main src port =
-  let%lwt () = Nocrypto_entropy_lwt.initialize () in
+  let () = Mirage_crypto_rng_lwt.initialize () in
   let key =
-    let secret = Nocrypto.Rng.generate ECB.key_sizes.(0) in
+    let secret = Mirage_crypto_rng.generate ECB.key_sizes.(0) in
     ECB.of_secret secret in
   let server =
     let callback = Pastebin.callback key in
     Cohttp_lwt_unix.Server.make ~callback () in
-  let%lwt ctx = Conduit_lwt_unix.init ?src () in
+  Conduit_lwt_unix.init ?src () >>= fun ctx ->
   let ctx = Cohttp_lwt_unix.Net.init ~ctx () in
   Cohttp_lwt_unix.Server.create ~ctx ~mode:(`TCP (`Port port)) server
 

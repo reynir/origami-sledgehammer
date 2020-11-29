@@ -1,20 +1,25 @@
-opam-version: "1.2"
+opam-version: "2.0"
 maintainer: "Reynir Björnsson <reynir@reynir.dk>"
 author: "Reynir Björnsson <reynir@reynir.dk>"
-dev-repo: "https://github.com/reynir/origami-sledgehammer.git"
+dev-repo: "git+https://github.com/reynir/origami-sledgehammer.git"
 homepage: "https://github.com/reynir/origami-sledgehammer/"
 bug-reports: "https://github.com/reynir/origami-sledgehammer/issues/"
 license: "BSD-2-clause"
-build: ["jbuilder" "build" "-p" name]
+build: [
+  ["dune" "subst"] {pinned}
+  ["dune" "build" "-p" name "-j" jobs]
+]
 depends: [
-  "ocamlfind" {build}
-  "jbuilder" {build}
+  "dune"
   "cmdliner"
   "lwt"
-  "lwt_ppx"
-  "nocrypto"
+  "mirage-crypto"
+  "mirage-crypto-rng"
   "tyre"
+  "cohttp"
   "cohttp-lwt-unix"
   "base64"
   "tyxml"
 ]
+
+synopsis: "Pastebin service"
