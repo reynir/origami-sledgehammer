@@ -6,6 +6,8 @@ module Pastes = Store.Make(struct let max = 128 end)
 (* Mirage_crypto.Cipher_block.DES is 3DES and not actually DES *)
 module ECB = Mirage_crypto.Cipher_block.DES.ECB
 
+let alphabet = Base64.uri_safe_alphabet
+
 let cs_of_int64 n =
   let buf = Cstruct.create 8 in
   let () = Cstruct.BE.set_uint64 buf 0 n in
@@ -15,7 +17,7 @@ let int64_of_cs buf =
   Cstruct.BE.get_uint64 buf 0
 
 let re_b64_digit =
-  Re.(alt [digit; rg 'a' 'z'; rg 'A'  'Z'; char '/'; char '+'])
+  Re.(alt [digit; rg 'a' 'z'; rg 'A'  'Z'; char '-'; char '_'])
 
 let re_b64_num =
   let num_digits = ceil (float_of_int ECB.block_size *. 4. /. 3.) |> int_of_float in
@@ -26,8 +28,8 @@ let re_b64_num =
 
 
 let tyre_b64_num = Tyre.conv
-    (fun x -> Base64.decode_exn ~pad:false x |> Cstruct.of_string |> int64_of_cs)
-    (fun x -> cs_of_int64 x |> Cstruct.to_string |> Base64.encode_string ~pad:false)
+    (fun x -> Base64.decode_exn ~alphabet ~pad:false x |> Cstruct.of_string |> int64_of_cs)
+    (fun x -> cs_of_int64 x |> Cstruct.to_string |> Base64.encode_string ~alphabet ~pad:false)
     (Tyre.regex re_b64_num)
 
 type route =
