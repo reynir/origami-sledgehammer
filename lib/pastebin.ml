@@ -49,8 +49,20 @@ let tyre_resource =
 
 let tyre_resource_re = Tyre.compile tyre_resource
 
-let callback key _conn (req : Cohttp.Request.t) (body : Cohttp_lwt.Body.t)
+let callback ?proxy_scheme_header key _conn (req : Cohttp.Request.t) (body : Cohttp_lwt.Body.t)
   : (Cohttp.Response.t * Cohttp_lwt.Body.t) Lwt.t =
+  (* Use scheme from proxy_scheme_header header, otherwise use scheme from
+   * request defaulting to "http" if none provide a scheme *)
+  let scheme = match proxy_scheme_header with
+    | None -> Cohttp.Request.scheme req
+    | Some h ->
+      Option.fold
+        ~none:(Cohttp.Request.scheme req)
+        ~some:Option.some
+        (Cohttp.Header.get (Cohttp.Request.headers req) h)
+  in
+  let scheme = Some (Option.value ~default:"http" scheme) in
+  let req_url = Uri.with_scheme (Cohttp.Request.uri req) scheme in
   match req.Cohttp.Request.meth with
   | `GET ->
     let resource = req.Cohttp.Request.resource in
@@ -69,7 +81,6 @@ let callback key _conn (req : Cohttp.Request.t) (body : Cohttp_lwt.Body.t)
                         Cohttp_lwt.Body.of_string "Not found\n")
         end
       | Ok Root ->
-        let req_url = Cohttp.Request.uri req in
         Lwt.return (Cohttp.Response.make (),
                     Cohttp_lwt.Body.of_string (Landingpage.html_string req_url))
       | Error _ ->
@@ -83,8 +94,7 @@ let callback key _conn (req : Cohttp.Request.t) (body : Cohttp_lwt.Body.t)
               |> ECB.encrypt ~key
               |> int64_of_cs
               |> Tyre.eval tyre_paste_resource in
-    let req_url = Cohttp.Request.uri req in
-    let url =  Uri.with_scheme (Uri.with_path req_url path) (Some "http") in
+    let url =  Uri.with_path req_url path in
     Lwt.return (Cohttp.Response.make ~status:`Created (),
                 Cohttp_lwt.Body.of_string (Uri.to_string url ^ "\n"))
   | _ ->

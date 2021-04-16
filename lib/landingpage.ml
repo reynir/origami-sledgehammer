@@ -1,10 +1,7 @@
 open Tyxml
 
 let html url =
-  (* Any way to detect the scheme? *)
-  let url' = Uri.with_scheme url (Some "https") in
   let url = Uri.to_string url in
-  let url' = Uri.to_string url' in
   let open Html in
   let mytitle = title (Html.txt "Origami Sledgehammer Pastebin Service")
   and mybody = [
@@ -15,7 +12,7 @@ let html url =
        code [Html.txt "curl"];
        Html.txt ":"];
     pre [Html.txt "echo Hello, World | curl --data-binary @- ";
-         a ~a:[a_href url] [Html.txt url']];
+         a ~a:[a_href url] [Html.txt url]];
   ]
   in html
     (head mytitle [])
