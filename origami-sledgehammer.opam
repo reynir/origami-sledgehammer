@@ -16,7 +16,7 @@ depends: [
   "mirage-crypto"
   "mirage-crypto-rng"
   "tyre"
-  "cohttp"
+  "cohttp" {>= "4.0.0"}
   "cohttp-lwt-unix"
   "base64"
   "tyxml"
