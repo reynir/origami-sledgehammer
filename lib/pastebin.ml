@@ -16,8 +16,7 @@ let cs_of_int64 n =
 let int64_of_cs buf =
   Cstruct.BE.get_uint64 buf 0
 
-let re_b64_digit =
-  Re.(alt [digit; rg 'a' 'z'; rg 'A'  'Z'; char '-'; char '_'])
+let re_b64_digit = Re.set (Base64.alphabet alphabet)
 
 let re_b64_num =
   let num_digits = ceil (float_of_int ECB.block_size *. 4. /. 3.) |> int_of_float in
